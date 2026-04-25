@@ -1,0 +1,173 @@
+openapi: 3.0.3
+info:
+  title: Coworking Spaces API Contract (Conceptual)
+  version: 1.0.0
+servers:
+  - url: /api/v1
+
+paths:
+  /reservations:
+    post:
+      summary: Create a reservation for a coworking space
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - spaceId
+                - userId
+                - startDateTime
+                - endDateTime
+              properties:
+                spaceId:
+                  type: string
+                  example: SPC-001
+                userId:
+                  type: string
+                  example: USR-1001
+                startDateTime:
+                  type: string
+                  format: date-time
+                  example: "2026-04-25T10:00:00Z"
+                endDateTime:
+                  type: string
+                  format: date-time
+                  example: "2026-04-25T12:00:00Z"
+                notes:
+                  type: string
+                  example: Need a quiet room
+      responses:
+        "201":
+          description: Reservation created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reservationId:
+                    type: string
+                    example: RSV-9001
+                  spaceId:
+                    type: string
+                    example: SPC-001
+                  userId:
+                    type: string
+                    example: USR-1001
+                  status:
+                    type: string
+                    example: PENDING
+                  totalPrice:
+                    type: number
+                    format: float
+                    example: 7000.0
+                  currency:
+                    type: string
+                    example: CRC
+                  createdAt:
+                    type: string
+                    format: date-time
+                    example: "2026-04-25T09:50:00Z"
+        "400":
+          description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: INVALID_REQUEST
+                  message:
+                    type: string
+                    example: startDateTime must be earlier than endDateTime.
+        "409":
+          description: Requested time slot is not available
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: TIME_SLOT_NOT_AVAILABLE
+                  message:
+                    type: string
+                    example: Selected time slot is not available for this space.
+
+  /reservations/{reservationId}/status:
+    put:
+      summary: Update reservation status
+      parameters:
+        - name: reservationId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: RSV-9001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+                - updatedBy
+              properties:
+                status:
+                  type: string
+                  enum:
+                    - CONFIRMED
+                    - CANCELLED
+                updatedBy:
+                  type: string
+                  example: USR-1001
+      responses:
+        "200":
+          description: Reservation status updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reservationId:
+                    type: string
+                    example: RSV-9001
+                  previousStatus:
+                    type: string
+                    example: PENDING
+                  status:
+                    type: string
+                    example: CONFIRMED
+                  updatedAt:
+                    type: string
+                    format: date-time
+                    example: "2026-04-25T10:05:00Z"
+        "404":
+          description: Reservation was not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: RESERVATION_NOT_FOUND
+                  message:
+                    type: string
+                    example: Reservation does not exist.
+        "409":
+          description: Invalid status transition
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: INVALID_STATUS_TRANSITION
+                  message:
+                    type: string
+                    example: Reservation cannot move from CANCELLED to CONFIRMED.
